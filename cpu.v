@@ -504,7 +504,11 @@ module InstruDecode(instruction,opcode,opType,Rn,Rd,shift,Rm,sximm8,sximm5);
 	assign Rn = instruction[10:8];
 	assign Rd = instruction[7:5];
 	assign Rm = instruction[2:0];
-	assign shift = instruction[4:3];
+    always @(*)
+        if (instruction[15:13] !== 3'b011 && instruction[15:13] !== 3'b100)
+            shift = instruction[4:3];
+        else
+            shift = 2'b00;
 	assign imm8 = instruction[7:0];
 	assign imm5 = instruction[4:0];
 
