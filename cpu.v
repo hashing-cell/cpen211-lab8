@@ -65,7 +65,7 @@ module cpu(clk,reset,read_data,out,N,V,Z,mem_addr,mem_cmd);
 
     //multiplexer that determines the input to the program counter
     //assign next_pc = reset_pc ? 9'b0 : PC + 1'b1; !!!delete later
-    Mux3in #(9) MUX2(PC + 1'b1, 9'b0, PC + 1'b1 + sximm8, reset_pc, next_pc);
+    Mux3in #(9) MUX2(PC + 1'b1, 9'b0, PC + 9'b000000001 + sximm8, reset_pc, next_pc);
 
 
     //PROGRAM COUNTER
