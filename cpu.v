@@ -19,13 +19,14 @@
 `define MWRITE 2'b11
 
 //CPU logic block
-module cpu(clk,reset,read_data,out,N,V,Z,mem_addr,mem_cmd);
+module cpu(clk,reset,read_data,out,N,V,Z,mem_addr,mem_cmd,H);
 	input clk, reset;
 	input [15:0] read_data;
 	output [15:0] out;
 	output N, V, Z;
     output [1:0] mem_cmd;
     output [8:0] mem_addr;
+    output H;
 
 	wire[15:0] instr_out;
     wire [2:0] opcode, writenum, readnum, out_mux; 
@@ -61,7 +62,7 @@ module cpu(clk,reset,read_data,out,N,V,Z,mem_addr,mem_cmd);
     assign writenum = out_mux;
 
     //finite state machine that chooses values to be sent to the datapath based on instructions given to it
-    fsm FSM1(clk,reset,opcode,opType,Rn, N, V, Z, nsel,vsel,loada,loadb,asel,bsel,loadc,loads,write,mem_cmd,addr_sel,load_ir,load_pc,reset_pc,load_addr);
+    fsm FSM1(clk,reset,opcode,opType,Rn, N, V, Z, nsel,vsel,loada,loadb,asel,bsel,loadc,loads,write,mem_cmd,addr_sel,load_ir,load_pc,reset_pc,load_addr,H);
 
     //multiplexer that determines the input to the program counter
 
@@ -87,7 +88,7 @@ module cpu(clk,reset,read_data,out,N,V,Z,mem_addr,mem_cmd);
     assign Z = outFlags[0];
 endmodule
 
-module fsm(clk,reset,opcode,op,cond, N, V, Z, nsel,vsel,loada,loadb,asel,bsel,loadc,loads,write, mem_cmd, addr_sel, load_ir, load_pc, reset_pc, load_addr);
+module fsm(clk,reset,opcode,op,cond, N, V, Z, nsel,vsel,loada,loadb,asel,bsel,loadc,loads,write, mem_cmd, addr_sel, load_ir, load_pc, reset_pc, load_addr,H);
 	input clk,reset;
 	input [2:0] opcode;
 	input [1:0] op;
@@ -101,6 +102,7 @@ module fsm(clk,reset,opcode,op,cond, N, V, Z, nsel,vsel,loada,loadb,asel,bsel,lo
     output [1:0] mem_cmd;
     output addr_sel, load_ir, load_pc, load_addr;
     output [3:0] reset_pc;
+    output H;
 
 	reg [3:0] present_state; //refer to lab6 powerpoint slide 10
 	reg [2:0] nsel;
@@ -109,6 +111,7 @@ module fsm(clk,reset,opcode,op,cond, N, V, Z, nsel,vsel,loada,loadb,asel,bsel,lo
 	reg [3:0] vsel; //one hot
 	reg write;
 	reg w;
+    reg H;
 
     reg [1:0] mem_cmd;
     reg addr_sel, load_ir, load_pc, load_addr;
@@ -126,6 +129,7 @@ module fsm(clk,reset,opcode,op,cond, N, V, Z, nsel,vsel,loada,loadb,asel,bsel,lo
             addr_sel = 1'b0;
             mem_cmd = `MNONE;
             load_addr = 1'b0;
+            H = 1'b0;
 		end else 
         begin
 			casex ({opcode, present_state})
@@ -138,6 +142,7 @@ module fsm(clk,reset,opcode,op,cond, N, V, Z, nsel,vsel,loada,loadb,asel,bsel,lo
                     addr_sel = 1'b1;
                     mem_cmd = `MREAD;
                     load_addr = 1'b0;
+                    H = 1'b0;
                 end
 
                 {3'bxxx, `SIF1}:
@@ -824,7 +829,11 @@ module fsm(clk,reset,opcode,op,cond, N, V, Z, nsel,vsel,loada,loadb,asel,bsel,lo
                         end
                     endcase
                 //HALT
-                {3'b111, 4'bxxxx}: present_state = `Shalt;
+                {3'b111, 4'bxxxx}:
+                begin
+                    present_state = `Shalt;
+                    H = 1'b1;
+                end
                 {3'bxxx, `Shalt}: present_state = `Shalt;
                 default: present_state = `Su;
             endcase

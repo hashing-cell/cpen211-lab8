@@ -21,10 +21,11 @@ module lab8_top(KEY,SW,LEDR,HEX0,HEX1,HEX2,HEX3,HEX4,HEX5,CLOCK_50);
     wire [1:0] mem_cmd;
     wire [8:0] mem_addr;
     wire outRead, outWrite;
+    wire H;
 
 	//send data to the cpu to obtain commands and addresses
 	//need to replace clk with one of the KEYs !!! same with reset
-	cpu CPU(clk,reset,read_data,write_data,N,V,Z, mem_addr,mem_cmd);
+	cpu CPU(clk,reset,read_data,write_data,N,V,Z, mem_addr,mem_cmd,H);
 
 	//RAM instantiation (place values or take values with RAM)
 	RAM #(16,8) MEM(clk,mem_addr[7:0],mem_addr[7:0],write,write_data,dout);
@@ -50,6 +51,7 @@ module lab8_top(KEY,SW,LEDR,HEX0,HEX1,HEX2,HEX3,HEX4,HEX5,CLOCK_50);
 	assign read_data[15:8] = outRead ? 8'h00 : 8'bz;
 	loadEnableRegister #(8) writeData(clk, outWrite, write_data[7:0], LEDR[7:0]);
 
+	assign LEDR[8] = H;
 
 endmodule
 
