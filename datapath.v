@@ -4,7 +4,7 @@ module datapath(clk,readnum,vsel,loada,loadb,shift,asel,bsel,ALUop,loadc,loads,w
     input [1:0] shift,ALUop;
     input [2:0] writenum,readnum;
 	input [3:0] vsel;
-	input [7:0] PC;
+	input [8:0] PC;
     input [15:0] mdata, sximm8, sximm5;
 
     output [2:0] outFlags;
@@ -18,7 +18,7 @@ module datapath(clk,readnum,vsel,loada,loadb,shift,asel,bsel,ALUop,loadc,loads,w
 
 	//4 input multiplexer that assigns the value sent to register depending on vsel
 	//C -> 0 (0001), mdata -> 4 (1000)
-	Mux4in vselOut(datapath_out, {8'b0, PC}, sximm8, mdata, vsel, data_in);
+	Mux4in vselOut(datapath_out, {7'b0, PC}, sximm8, mdata, vsel, data_in);
 
 	//register file that performs the writing and reading
     regfile REGFILE(data_in, writenum, write, readnum, clk, data_out);
