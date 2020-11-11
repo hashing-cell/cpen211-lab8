@@ -667,7 +667,7 @@ module fsm(clk,reset,opcode,op,cond, N, V, Z, nsel,vsel,loada,loadb,asel,bsel,lo
 
                 //Direct/Return/Indirect
                 {3'b010, 4'bxxxx}:
-                    casex ({op, Rn})
+                    casex ({op, cond})
                         {2'b11, 3'b111}:
                         begin
                             casex (present_state)
@@ -744,7 +744,7 @@ module fsm(clk,reset,opcode,op,cond, N, V, Z, nsel,vsel,loada,loadb,asel,bsel,lo
                                     loadc = 1'b1;
                                     loads = 1'b0;
                                 end
-                                `Sc;
+                                `Sc:
                                 begin
                                     load_pc = 1'b1;
                                     reset_pc = 4'b1000;
@@ -803,7 +803,7 @@ module fsm(clk,reset,opcode,op,cond, N, V, Z, nsel,vsel,loada,loadb,asel,bsel,lo
                                     loadc = 1'b1;
                                     loads = 1'b0;
                                 end
-                                `Se;
+                                `Se:
                                 begin
                                     load_pc = 1'b1;
                                     reset_pc = 4'b1000;
@@ -821,7 +821,7 @@ module fsm(clk,reset,opcode,op,cond, N, V, Z, nsel,vsel,loada,loadb,asel,bsel,lo
                                 end
                             endcase
                         end
-
+                    endcase
                 //HALT
                 {3'b111, 4'bxxxx}: present_state = `Shalt;
                 {3'bxxx, `Shalt}: present_state = `Shalt;
