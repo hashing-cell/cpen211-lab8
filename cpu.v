@@ -506,7 +506,6 @@ module fsm(clk,reset,opcode,op,cond, N, V, Z, nsel,vsel,loada,loadb,asel,bsel,lo
                                 end
                                 `Sa: 
                                 begin
-                                    load_pc = 1'b1;
                                     reset_pc = 4'b0100;
                                 end
                                 `SIF1:
@@ -539,7 +538,6 @@ module fsm(clk,reset,opcode,op,cond, N, V, Z, nsel,vsel,loada,loadb,asel,bsel,lo
                                 end
                                 `Sa: 
                                 begin
-                                    load_pc = 1'b1;
                                     if(Z == 1'b1)
                                         reset_pc = 4'b0100;
                                     else
@@ -575,7 +573,6 @@ module fsm(clk,reset,opcode,op,cond, N, V, Z, nsel,vsel,loada,loadb,asel,bsel,lo
                                 end
                                 `Sa: 
                                 begin
-                                    load_pc = 1'b1;
                                     if(Z == 1'b0)
                                         reset_pc = 4'b0100;
                                     else
@@ -611,7 +608,6 @@ module fsm(clk,reset,opcode,op,cond, N, V, Z, nsel,vsel,loada,loadb,asel,bsel,lo
                                 end
                                 `Sa: 
                                 begin
-                                    load_pc = 1'b1;
                                     if(N != V)
                                         reset_pc = 4'b0100;
                                     else
@@ -647,7 +643,6 @@ module fsm(clk,reset,opcode,op,cond, N, V, Z, nsel,vsel,loada,loadb,asel,bsel,lo
                                 end
                                 `Sa: 
                                 begin
-                                    load_pc = 1'b1;
                                     if((N != V) || (Z == 1'b1))
                                         reset_pc = 4'b0100;
                                     else
@@ -692,7 +687,6 @@ module fsm(clk,reset,opcode,op,cond, N, V, Z, nsel,vsel,loada,loadb,asel,bsel,lo
                                 end
                                 `Sa:
                                 begin
-                                    load_pc = 1'b1;
                                     reset_pc = 4'b0001;
                                 end
                                 `Sb:
@@ -705,7 +699,6 @@ module fsm(clk,reset,opcode,op,cond, N, V, Z, nsel,vsel,loada,loadb,asel,bsel,lo
                                 `Sc:
                                 begin
                                     write = 1'b0;
-                                    load_pc = 1'b1;
                                     reset_pc = 4'b0100;
                                 end
                                 `SIF1: 
@@ -752,7 +745,6 @@ module fsm(clk,reset,opcode,op,cond, N, V, Z, nsel,vsel,loada,loadb,asel,bsel,lo
                                 end
                                 `Sc:
                                 begin
-                                    load_pc = 1'b1;
                                     reset_pc = 4'b1000;
                                 end
                                 `SIF1: 
@@ -786,7 +778,6 @@ module fsm(clk,reset,opcode,op,cond, N, V, Z, nsel,vsel,loada,loadb,asel,bsel,lo
                                 end
                                 `Sa:
                                 begin
-                                    load_pc = 1'b1;
                                     reset_pc = 4'b0001;
                                 end
                                 `Sb:
@@ -811,7 +802,6 @@ module fsm(clk,reset,opcode,op,cond, N, V, Z, nsel,vsel,loada,loadb,asel,bsel,lo
                                 end
                                 `Se:
                                 begin
-                                    load_pc = 1'b1;
                                     reset_pc = 4'b1000;
                                 end
                                 `SIF1: 
