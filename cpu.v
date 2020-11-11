@@ -44,8 +44,9 @@ module cpu(clk,reset,read_data,out,N,V,Z,mem_addr,mem_cmd);
     wire [15:0] datapath_out;
     wire [15:0] mdata = read_data;
     wire [7:0] PCwire = 8'b0;
-    wire addr_sel, load_ir, load_pc, reset_pc, load_addr;
+    wire addr_sel, load_ir, load_pc, load_addr;
     wire [8:0] next_pc, PC, data_addr_out;
+    wire [2:0] reset_pc;
 
 
 	//when clock is 1 and load is 1 store 'in' in register
@@ -60,10 +61,12 @@ module cpu(clk,reset,read_data,out,N,V,Z,mem_addr,mem_cmd);
     assign writenum = out_mux;
 
     //finite state machine that chooses values to be sent to the datapath based on instructions given to it
-    fsm FSM1(clk,reset,opcode,opType,nsel,vsel,loada,loadb,asel,bsel,loadc,loads,write,mem_cmd,addr_sel,load_ir,load_pc,reset_pc,load_addr);
+    fsm FSM1(clk,reset,opcode,opType,Rn, N, V, Z, nsel,vsel,loada,loadb,asel,bsel,loadc,loads,write,mem_cmd,addr_sel,load_ir,load_pc,reset_pc,load_addr);
 
     //multiplexer that determines the input to the program counter
-    assign next_pc = reset_pc ? 9'b0 : PC + 1'b1;
+    //assign next_pc = reset_pc ? 9'b0 : PC + 1'b1; !!!delete later
+    Mux3in #(9) MUX2(PC + 1'b1, 9'b0, PC + 1'b1 + sximm8, reset_pc, next_pc);
+
 
     //PROGRAM COUNTER
     loadEnableRegister #(9) PC0(clk, load_pc, next_pc, PC);
@@ -84,18 +87,20 @@ module cpu(clk,reset,read_data,out,N,V,Z,mem_addr,mem_cmd);
     assign Z = outFlags[0];
 endmodule
 
-module fsm(clk,reset,opcode,op,nsel,vsel,loada,loadb,asel,bsel,loadc,loads,write, mem_cmd, addr_sel, load_ir, load_pc, reset_pc, load_addr);
+module fsm(clk,reset,opcode,op,cond, N, V, Z, nsel,vsel,loada,loadb,asel,bsel,loadc,loads,write, mem_cmd, addr_sel, load_ir, load_pc, reset_pc, load_addr);
 	input clk,reset;
 	input [2:0] opcode;
 	input [1:0] op;
+    input [2:0] cond;
+    input N,V,Z;
 	output [3:0] vsel; //one hot select
 	output [2:0] nsel; //nsel is a one-hot select, 100 for Rn, 010 for Rd, and 001 for Rm
 	output loada,loadb,loadc,loads;
 	output asel,bsel;
 	output write;
     output [1:0] mem_cmd;
-    output addr_sel, load_ir, load_pc, reset_pc, load_addr;
-
+    output addr_sel, load_ir, load_pc, load_addr;
+    output [2:0] reset_pc;
 
 	reg [3:0] present_state; //refer to lab6 powerpoint slide 10
 	reg [2:0] nsel;
@@ -106,12 +111,13 @@ module fsm(clk,reset,opcode,op,nsel,vsel,loada,loadb,asel,bsel,loadc,loads,write
 	reg w;
 
     reg [1:0] mem_cmd;
-    reg addr_sel, load_ir, load_pc, reset_pc, load_addr;
+    reg addr_sel, load_ir, load_pc, load_addr;
+    reg [2:0] reset_pc;
 
 	always @(posedge clk) begin
 		if (reset) begin
 			present_state = `SRST;
-            reset_pc = 1'b1;
+            reset_pc = 3'b010;
             load_pc = 1'b1;
             write = 1'b0;
             loadc = 1'b0;
@@ -128,7 +134,7 @@ module fsm(clk,reset,opcode,op,nsel,vsel,loada,loadb,asel,bsel,loadc,loads,write
                 begin
                     load_pc = 1'b0;
                     present_state = `SIF1;
-                    reset_pc = 1'b0;
+                    reset_pc = 3'b001;
                     addr_sel = 1'b1;
                     mem_cmd = `MREAD;
                     load_addr = 1'b0;
@@ -182,7 +188,7 @@ module fsm(clk,reset,opcode,op,nsel,vsel,loada,loadb,asel,bsel,loadc,loads,write
                                 begin
                                     addr_sel = 1'b1;
                                     mem_cmd = `MREAD;
-                                    reset_pc = 1'b0;
+                                    reset_pc = 3'b001;
                                     write = 1'b0;
                                     load_addr = 1'b0;
                                     load_pc = 1'b0;
@@ -233,7 +239,7 @@ module fsm(clk,reset,opcode,op,nsel,vsel,loada,loadb,asel,bsel,loadc,loads,write
                                 begin
                                     addr_sel = 1'b1;
                                     mem_cmd = `MREAD;
-                                    reset_pc = 1'b0;
+                                    reset_pc = 3'b001;
                                     load_addr = 1'b0;
                                     load_pc = 1'b0;
                                     write = 1'b0;
@@ -305,7 +311,7 @@ module fsm(clk,reset,opcode,op,nsel,vsel,loada,loadb,asel,bsel,loadc,loads,write
                         begin
                             addr_sel = 1'b1;
                             mem_cmd = `MREAD;
-                            reset_pc = 1'b0;
+                            reset_pc = 3'b001;
                             load_addr = 1'b0;
                             load_pc = 1'b0;
                             write = 1'b0;
@@ -377,7 +383,7 @@ module fsm(clk,reset,opcode,op,nsel,vsel,loada,loadb,asel,bsel,loadc,loads,write
                         begin
                             addr_sel = 1'b1;
                             mem_cmd = `MREAD;
-                            reset_pc = 1'b0;
+                            reset_pc = 3'b001;
                             load_addr = 1'b0;
                             load_pc = 1'b0;
                             write = 1'b0;
@@ -388,7 +394,7 @@ module fsm(clk,reset,opcode,op,nsel,vsel,loada,loadb,asel,bsel,loadc,loads,write
                     endcase
                 end
 
-                //STR !!!!probably not complete!!!!!
+                //STR
                 {3'b100, 4'bxxxx}:
                 begin
                     casex (present_state)
@@ -465,7 +471,7 @@ module fsm(clk,reset,opcode,op,nsel,vsel,loada,loadb,asel,bsel,loadc,loads,write
                         begin
                             addr_sel = 1'b1;
                             mem_cmd = `MREAD;
-                            reset_pc = 1'b0;
+                            reset_pc = 3'b001;
                             load_addr = 1'b0;
                             load_pc = 1'b0;
                             write = 1'b0;
@@ -475,6 +481,188 @@ module fsm(clk,reset,opcode,op,nsel,vsel,loada,loadb,asel,bsel,loadc,loads,write
                         default: nsel = `Su;
                     endcase
                 end
+
+                //Branches !!!
+                {3'b001, 4'bxxx}:
+                    case(cond) 
+                        3'b000:
+                        begin
+                            casex (present_state)
+                                `Supdate: present_state = `DECODE;
+                                `DECODE: present_state = `Sa;
+                                `Sa: present_state = `SIF1;
+                                default: present_state = `Su;
+                            endcase
+
+                            casex (present_state)
+                                `DECODE:
+                                begin
+                                    load_pc = 1'b0;
+                                end
+                                `Sa: 
+                                begin
+                                    reset_pc = 3'b100;
+                                end
+                                `SIF1:
+                                begin
+                                    addr_sel = 1'b1;
+                                    mem_cmd = `MREAD;
+                                    reset_pc = 3'b001;
+                                    load_addr = 1'b0;
+                                    load_pc = 1'b0;
+                                    write = 1'b0;
+                                    loadc = 1'b0;
+                                    loads = 1'b0;
+                                end
+                                default: present_state = `Su;
+                            endcase
+                        end
+                        3'b001:
+                        begin
+                            casex (present_state)
+                                `Supdate: present_state = `DECODE;
+                                `DECODE: present_state = `Sa;
+                                `Sa: present_state = `SIF1;
+                                default: present_state = `Su;
+                            endcase
+
+                            casex (present_state)
+                                `DECODE:
+                                begin
+                                    load_pc = 1'b0;
+                                end
+                                `Sa: 
+                                begin
+                                    if(Z == 1'b1)
+                                        reset_pc = 3'b100;
+                                    else
+                                        reset_pc = 3'b001;
+                                end
+                                `SIF1:
+                                begin
+                                    addr_sel = 1'b1;
+                                    mem_cmd = `MREAD;
+                                    reset_pc = 3'b001;
+                                    load_addr = 1'b0;
+                                    load_pc = 1'b0;
+                                    write = 1'b0;
+                                    loadc = 1'b0;
+                                    loads = 1'b0;
+                                end
+                                default: present_state = `Su;
+                            endcase
+                        end
+                        3'b010:
+                        begin
+                            casex (present_state)
+                                `Supdate: present_state = `DECODE;
+                                `DECODE: present_state = `Sa;
+                                `Sa: present_state = `SIF1;
+                                default: present_state = `Su;
+                            endcase
+
+                            casex (present_state)
+                                `DECODE:
+                                begin
+                                    load_pc = 1'b0;
+                                end
+                                `Sa: 
+                                begin
+                                    if(Z == 1'b0)
+                                        reset_pc = 3'b100;
+                                    else
+                                        reset_pc = 3'b001;
+                                end
+                                `SIF1:
+                                begin
+                                    addr_sel = 1'b1;
+                                    mem_cmd = `MREAD;
+                                    reset_pc = 3'b001;
+                                    load_addr = 1'b0;
+                                    load_pc = 1'b0;
+                                    write = 1'b0;
+                                    loadc = 1'b0;
+                                    loads = 1'b0;
+                                end
+                                default: present_state = `Su;
+                            endcase
+                        end
+                        3'b011:
+                        begin
+                            casex (present_state)
+                                `Supdate: present_state = `DECODE;
+                                `DECODE: present_state = `Sa;
+                                `Sa: present_state = `SIF1;
+                                default: present_state = `Su;
+                            endcase
+
+                            casex (present_state)
+                                `DECODE:
+                                begin
+                                    load_pc = 1'b0;
+                                end
+                                `Sa: 
+                                begin
+                                    if(N != V)
+                                        reset_pc = 3'b100;
+                                    else
+                                        reset_pc = 3'b001;
+                                end
+                                `SIF1:
+                                begin
+                                    addr_sel = 1'b1;
+                                    mem_cmd = `MREAD;
+                                    reset_pc = 3'b001;
+                                    load_addr = 1'b0;
+                                    load_pc = 1'b0;
+                                    write = 1'b0;
+                                    loadc = 1'b0;
+                                    loads = 1'b0;
+                                end
+                                default: present_state = `Su;
+                            endcase
+                        end
+                        3'b100:
+                        begin
+                        casex (present_state)
+                                `Supdate: present_state = `DECODE;
+                                `DECODE: present_state = `Sa;
+                                `Sa: present_state = `SIF1;
+                                default: present_state = `Su;
+                            endcase
+
+                            casex (present_state)
+                                `DECODE:
+                                begin
+                                    load_pc = 1'b0;
+                                end
+                                `Sa: 
+                                begin
+                                    if((N != V) || (Z == 1'b1))
+                                        reset_pc = 3'b100;
+                                    else
+                                        reset_pc = 3'b001;
+                                end
+                                `SIF1:
+                                begin
+                                    addr_sel = 1'b1;
+                                    mem_cmd = `MREAD;
+                                    reset_pc = 3'b001;
+                                    load_addr = 1'b0;
+                                    load_pc = 1'b0;
+                                    write = 1'b0;
+                                    loadc = 1'b0;
+                                    loads = 1'b0;
+                                end
+                                default: present_state = `Su;
+                            endcase
+                        end
+                        default: present_state = `Su;
+                    endcase
+
+
+                //Direct/Return/Indirect
+                //{3'b010, 4'bxxx}:
 
                 //HALT
                 {3'b111, 4'bxxxx}: present_state = `Shalt;
@@ -497,6 +685,7 @@ module InstruDecode(instruction,opcode,opType,Rn,Rd,shift,Rm,sximm8,sximm5);
 
 	wire [7:0] imm8;
 	wire [4:0] imm5;
+    reg  [1:0] shift;
 
 	//the following assign statements are based off the suggested chart
 	assign opcode = instruction[15:13];
@@ -504,12 +693,16 @@ module InstruDecode(instruction,opcode,opType,Rn,Rd,shift,Rm,sximm8,sximm5);
 	assign Rn = instruction[10:8];
 	assign Rd = instruction[7:5];
 	assign Rm = instruction[2:0];
-    always @(*)
+
+
+    always @(*) begin
         if (instruction[15:13] !== 3'b011 && instruction[15:13] !== 3'b100)
-            assign shift = instruction[4:3];
+            shift = instruction[4:3];
         else
-            assign shift = 2'b00;
-	assign imm8 = instruction[7:0];
+            shift = 2'b00;
+    end
+	
+    assign imm8 = instruction[7:0];
 	assign imm5 = instruction[4:0];
 
 	//sign extend imm5 and imm8 to be 16 bits
