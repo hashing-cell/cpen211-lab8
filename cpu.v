@@ -33,6 +33,7 @@ module cpu(clk,reset,read_data,out,N,V,Z,mem_addr,mem_cmd);
     wire [2:0] Rn,Rd,Rm;
     wire [1:0] shift;
     wire [15:0] sximm8;
+    wire [8:0] sximm8_nine;
     wire [15:0] sximm5;
     wire w; //is 1 when reset
     wire [3:0] vsel; //one hot select
@@ -45,14 +46,14 @@ module cpu(clk,reset,read_data,out,N,V,Z,mem_addr,mem_cmd);
     wire [15:0] mdata = read_data;
     wire addr_sel, load_ir, load_pc, load_addr;
     wire [8:0] next_pc, PC, data_addr_out;
-    wire [2:0] reset_pc;
+    wire [3:0] reset_pc;
 
 
 	//when clock is 1 and load is 1 store 'in' in register
 	loadEnableRegister instructionReg(clk, load_ir, read_data, instr_out);
 
     //decode all the instructions so we have opcode, op to send to fsm and rest to datapath
-    InstruDecode instr1(instr_out,opcode,opType,Rn,Rd,shift,Rm,sximm8,sximm5);
+    InstruDecode instr1(instr_out,opcode,opType,Rn,Rd,shift,Rm,sximm8,sximm8_nine,sximm5);
 	
     Mux3in MUX1(Rn,Rd,Rm, nsel, out_mux);
 
@@ -63,8 +64,8 @@ module cpu(clk,reset,read_data,out,N,V,Z,mem_addr,mem_cmd);
     fsm FSM1(clk,reset,opcode,opType,Rn, N, V, Z, nsel,vsel,loada,loadb,asel,bsel,loadc,loads,write,mem_cmd,addr_sel,load_ir,load_pc,reset_pc,load_addr);
 
     //multiplexer that determines the input to the program counter
-    //assign next_pc = reset_pc ? 9'b0 : PC + 1'b1; !!!delete later
-    Mux4in #(9) MUX2(PC + 9'b000000001, 9'b0, PC + 9'b000000001 + sximm8, datapath_out,reset_pc, next_pc);
+
+    Mux4in #(9) MUX2(PC + 9'b000000001, 9'b0, PC + 9'b000000001 + sximm8_nine, datapath_out[8:0],reset_pc, next_pc);
 
 
     //PROGRAM COUNTER
@@ -832,13 +833,14 @@ module fsm(clk,reset,opcode,op,cond, N, V, Z, nsel,vsel,loada,loadb,asel,bsel,lo
 endmodule
 
 
-module InstruDecode(instruction,opcode,opType,Rn,Rd,shift,Rm,sximm8,sximm5);
+module InstruDecode(instruction,opcode,opType,Rn,Rd,shift,Rm,sximm8,sximm8_nine,sximm5);
 	input [15:0] instruction; //16 bit instruction 
 	output [2:0] opcode; 
 	output [1:0] opType;
 	output [2:0] Rn,Rd,Rm;
 	output [1:0] shift;
 	output [15:0] sximm8;
+    output [8:0] sximm8_nine;
 	output [15:0] sximm5;
 
 	wire [7:0] imm8;
@@ -864,23 +866,26 @@ module InstruDecode(instruction,opcode,opType,Rn,Rd,shift,Rm,sximm8,sximm5);
 	assign imm5 = instruction[4:0];
 
 	//sign extend imm5 and imm8 to be 16 bits
-	SignExtend #(5) Extend5to16(imm5, sximm5);
-	SignExtend #(8) Extend8to16(imm8, sximm8);
+	SignExtend #(5,16) Extend5to16(imm5, sximm5);
+    SignExtend #(8,9)  Extend8to9(imm8, sximm8_nine);
+	SignExtend #(8,16) Extend8to16(imm8, sximm8);
 
 endmodule
 
 //module for sign extending a signal with n bits
 module SignExtend(in,out); 
 	parameter n;
+    parameter x = 16;
 
 	input [n-1:0] in;
-	output [15:0] out;
-	reg [15:0] out;
+	output [x-1:0] out;
+	reg [x-1:0] out;
 
 	always @(*)
 		case(in[n-1])
-			1'b0: out = {{16-n{1'b0}},in};
-			1'b1: out = {{16-n{1'b1}},in};
+			1'b0: out = {{x-n{1'b0}},in};
+			1'b1: out = {{x-n{1'b1}},in};
 			default: out = 16'bxxxxxxxxxxxxxxxx;
 		endcase
 endmodule
+
