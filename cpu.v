@@ -79,7 +79,7 @@ module cpu(clk,reset,read_data,out,N,V,Z,mem_addr,mem_cmd,H);
     assign mem_addr = addr_sel ? PC : data_addr_out;
 
     //datapath that does all the calculations and stores the values for the registers
-    datapath DP(clk,readnum,vsel,loada,loadb,shift,asel,bsel,opType,loadc,loads,writenum,write,mdata,PC,sximm8, sximm5, outFlags,datapath_out);
+    datapath DP(clk,readnum,vsel,loada,loadb,shift,asel,bsel,opType,loadc,loads,writenum,write,mdata,PC + 9'b000000001,sximm8, sximm5, outFlags,datapath_out);
 
     //assign final outputs, N -> neg, V  -> overflow, Z -> zero, out = final calculation
     assign out = datapath_out;
@@ -512,7 +512,7 @@ module fsm(clk,reset,opcode,op,cond, N, V, Z, nsel,vsel,loada,loadb,asel,bsel,lo
                                 begin
                                     addr_sel = 1'b1;
                                     mem_cmd = `MREAD;
-                                    reset_pc = 4'b0001;
+                                    //reset_pc = 4'b0001;
                                     load_addr = 1'b0;
                                     load_pc = 1'b0;
                                     write = 1'b0;
@@ -527,7 +527,8 @@ module fsm(clk,reset,opcode,op,cond, N, V, Z, nsel,vsel,loada,loadb,asel,bsel,lo
                             casex (present_state)
                                 `Supdate: present_state = `DECODE;
                                 `DECODE: present_state = `Sa;
-                                `Sa: present_state = `SIF1;
+                                `Sa: present_state = `Sb;
+                                `Sb: present_state = `SIF1;
                                 default: present_state = `Su;
                             endcase
 
@@ -538,10 +539,14 @@ module fsm(clk,reset,opcode,op,cond, N, V, Z, nsel,vsel,loada,loadb,asel,bsel,lo
                                 end
                                 `Sa: 
                                 begin
-                                    if(Z == 1'b1)
+                                    if(Z === 1'b1)
                                         reset_pc = 4'b0100;
                                     else
                                         reset_pc = 4'b0001;
+                                end
+                                `Sb:
+                                begin
+                                    load_pc = 1'b1;
                                 end
                                 `SIF1:
                                 begin
@@ -562,7 +567,8 @@ module fsm(clk,reset,opcode,op,cond, N, V, Z, nsel,vsel,loada,loadb,asel,bsel,lo
                             casex (present_state)
                                 `Supdate: present_state = `DECODE;
                                 `DECODE: present_state = `Sa;
-                                `Sa: present_state = `SIF1;
+                                `Sa: present_state = `Sb;
+                                `Sb: present_state = `SIF1;
                                 default: present_state = `Su;
                             endcase
 
@@ -573,10 +579,14 @@ module fsm(clk,reset,opcode,op,cond, N, V, Z, nsel,vsel,loada,loadb,asel,bsel,lo
                                 end
                                 `Sa: 
                                 begin
-                                    if(Z == 1'b0)
+                                    if(Z === 1'b0)
                                         reset_pc = 4'b0100;
                                     else
                                         reset_pc = 4'b0001;
+                                end
+                                `Sb:
+                                begin
+                                    load_pc = 1'b1;
                                 end
                                 `SIF1:
                                 begin
@@ -597,7 +607,8 @@ module fsm(clk,reset,opcode,op,cond, N, V, Z, nsel,vsel,loada,loadb,asel,bsel,lo
                             casex (present_state)
                                 `Supdate: present_state = `DECODE;
                                 `DECODE: present_state = `Sa;
-                                `Sa: present_state = `SIF1;
+                                `Sa: present_state = `Sb;
+                                `Sb: present_state = `SIF1;
                                 default: present_state = `Su;
                             endcase
 
@@ -608,10 +619,14 @@ module fsm(clk,reset,opcode,op,cond, N, V, Z, nsel,vsel,loada,loadb,asel,bsel,lo
                                 end
                                 `Sa: 
                                 begin
-                                    if(N != V)
+                                    if(N !== V)
                                         reset_pc = 4'b0100;
                                     else
                                         reset_pc = 4'b0001;
+                                end
+                                `Sb:
+                                begin
+                                    load_pc = 1'b1;
                                 end
                                 `SIF1:
                                 begin
@@ -632,7 +647,8 @@ module fsm(clk,reset,opcode,op,cond, N, V, Z, nsel,vsel,loada,loadb,asel,bsel,lo
                         casex (present_state)
                                 `Supdate: present_state = `DECODE;
                                 `DECODE: present_state = `Sa;
-                                `Sa: present_state = `SIF1;
+                                `Sa: present_state = `Sb;
+                                `Sb: present_state = `SIF1;
                                 default: present_state = `Su;
                             endcase
 
@@ -643,10 +659,14 @@ module fsm(clk,reset,opcode,op,cond, N, V, Z, nsel,vsel,loada,loadb,asel,bsel,lo
                                 end
                                 `Sa: 
                                 begin
-                                    if((N != V) || (Z == 1'b1))
+                                    if((N !== V) || (Z === 1'b1))
                                         reset_pc = 4'b0100;
                                     else
                                         reset_pc = 4'b0001;
+                                end
+                                `Sb:
+                                begin
+                                    load_pc = 1'b1;
                                 end
                                 `SIF1:
                                 begin
@@ -676,7 +696,8 @@ module fsm(clk,reset,opcode,op,cond, N, V, Z, nsel,vsel,loada,loadb,asel,bsel,lo
                                 `DECODE: present_state = `Sa;
                                 `Sa: present_state = `Sb;
                                 `Sb: present_state = `Sc;
-                                `Sc: present_state = `SIF1;
+                                `Sc: present_state = `Sd;
+                                `Sd: present_state = `SIF1;
                                 default: present_state = `Su;
                             endcase
 
@@ -692,7 +713,6 @@ module fsm(clk,reset,opcode,op,cond, N, V, Z, nsel,vsel,loada,loadb,asel,bsel,lo
                                 `Sb:
                                 begin
                                     vsel = 4'b0010;
-                                    load_pc = 1'b0;
                                     nsel = 3'b001;
                                     write = 1'b1;
                                 end
@@ -700,6 +720,10 @@ module fsm(clk,reset,opcode,op,cond, N, V, Z, nsel,vsel,loada,loadb,asel,bsel,lo
                                 begin
                                     write = 1'b0;
                                     reset_pc = 4'b0100;
+                                end
+                                `Sd:
+                                begin
+                                    load_pc = 1'b1;
                                 end
                                 `SIF1: 
                                 begin
@@ -722,7 +746,8 @@ module fsm(clk,reset,opcode,op,cond, N, V, Z, nsel,vsel,loada,loadb,asel,bsel,lo
                                 `DECODE: present_state = `Sa;
                                 `Sa: present_state = `Sb;
                                 `Sb: present_state = `Sc;
-                                `Sc: present_state = `SIF1;
+                                `Sc: present_state = `Sd;
+                                `Sd: present_state = `SIF1;
                                 default: present_state = `Su;
                             endcase
                             casex (present_state)
@@ -747,6 +772,10 @@ module fsm(clk,reset,opcode,op,cond, N, V, Z, nsel,vsel,loada,loadb,asel,bsel,lo
                                 begin
                                     reset_pc = 4'b1000;
                                 end
+                                `Sd:
+                                begin
+                                    load_pc = 1'b1;
+                                end
                                 `SIF1: 
                                 begin
                                     addr_sel = 1'b1;
@@ -768,7 +797,10 @@ module fsm(clk,reset,opcode,op,cond, N, V, Z, nsel,vsel,loada,loadb,asel,bsel,lo
                                 `DECODE: present_state = `Sa;
                                 `Sa: present_state = `Sb;
                                 `Sb: present_state = `Sc;
-                                `Sc: present_state = `SIF1;
+                                `Sc: present_state = `Sd;
+                                `Sd: present_state = `Se;
+                                `Se: present_state = `Sf;
+                                `Sf: present_state = `SIF1;
                                 default: present_state = `Su;
                             endcase
                             casex (present_state)
@@ -803,6 +835,10 @@ module fsm(clk,reset,opcode,op,cond, N, V, Z, nsel,vsel,loada,loadb,asel,bsel,lo
                                 `Se:
                                 begin
                                     reset_pc = 4'b1000;
+                                end
+                                `Sf:
+                                begin
+                                    load_pc = 1'b1;
                                 end
                                 `SIF1: 
                                 begin
@@ -855,7 +891,7 @@ module InstruDecode(instruction,opcode,opType,Rn,Rd,shift,Rm,sximm8,sximm8_nine,
 
 
     always @(*) begin
-        if (instruction[15:13] != 3'b011 || instruction[15:13] != 3'b100 || instruction[15:13] != 3'b001 || instruction[15:13] != 3'b010)
+        if (instruction[15:13] !== 3'b011 || instruction[15:13] !== 3'b100 || instruction[15:13] !== 3'b001 || instruction[15:13] !== 3'b010)
             shift = instruction[4:3];
         else
             shift = 2'b00;
