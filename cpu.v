@@ -538,7 +538,7 @@ module fsm(clk,reset,opcode,op,cond, N, V, Z, nsel,vsel,loada,loadb,asel,bsel,lo
                                 end
                                 `Sa: 
                                 begin
-                                    if(Z == 1'b1)
+                                    if(Z === 1'b1)
                                         reset_pc = 4'b0100;
                                     else
                                         reset_pc = 4'b0001;
@@ -573,7 +573,7 @@ module fsm(clk,reset,opcode,op,cond, N, V, Z, nsel,vsel,loada,loadb,asel,bsel,lo
                                 end
                                 `Sa: 
                                 begin
-                                    if(Z == 1'b0)
+                                    if(Z === 1'b0)
                                         reset_pc = 4'b0100;
                                     else
                                         reset_pc = 4'b0001;
@@ -608,7 +608,7 @@ module fsm(clk,reset,opcode,op,cond, N, V, Z, nsel,vsel,loada,loadb,asel,bsel,lo
                                 end
                                 `Sa: 
                                 begin
-                                    if(N != V)
+                                    if(N !== V)
                                         reset_pc = 4'b0100;
                                     else
                                         reset_pc = 4'b0001;
@@ -643,7 +643,7 @@ module fsm(clk,reset,opcode,op,cond, N, V, Z, nsel,vsel,loada,loadb,asel,bsel,lo
                                 end
                                 `Sa: 
                                 begin
-                                    if((N != V) || (Z == 1'b1))
+                                    if((N !== V) || (Z === 1'b1))
                                         reset_pc = 4'b0100;
                                     else
                                         reset_pc = 4'b0001;
@@ -652,7 +652,7 @@ module fsm(clk,reset,opcode,op,cond, N, V, Z, nsel,vsel,loada,loadb,asel,bsel,lo
                                 begin
                                     addr_sel = 1'b1;
                                     mem_cmd = `MREAD;
-                                    reset_pc = 4'b0001;
+                                    //reset_pc = 4'b0001;
                                     load_addr = 1'b0;
                                     load_pc = 1'b0;
                                     write = 1'b0;
