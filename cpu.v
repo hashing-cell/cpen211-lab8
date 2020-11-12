@@ -66,7 +66,7 @@ module cpu(clk,reset,read_data,out,N,V,Z,mem_addr,mem_cmd,H);
 
     //multiplexer that determines the input to the program counter
 
-    Mux4in #(9) MUX2(PC + 9'b000000001, 9'b0, PC + 9'b000000001 + sximm8_nine, datapath_out[8:0],reset_pc, next_pc);
+    Mux4in #(9) MUX2(PC + 9'b000000001, 9'b0, PC + sximm8_nine + 9'b000000001, datapath_out[8:0],reset_pc, next_pc);
 
 
     //PROGRAM COUNTER
@@ -134,7 +134,7 @@ module fsm(clk,reset,opcode,op,cond, N, V, Z, nsel,vsel,loada,loadb,asel,bsel,lo
         begin
 			casex ({opcode, present_state})
 
-                {3'bxxx, `SRST}:
+                {3'bxxx, `SRST}: //SIF1
                 begin
                     load_pc = 1'b0;
                     present_state = `SIF1;
@@ -145,7 +145,7 @@ module fsm(clk,reset,opcode,op,cond, N, V, Z, nsel,vsel,loada,loadb,asel,bsel,lo
                     H = 1'b0;
                 end
 
-                {3'bxxx, `SIF1}:
+                {3'bxxx, `SIF1}: //SIF2
                 begin
                     load_pc = 1'b0;
                     present_state = `SIF2;
@@ -154,7 +154,7 @@ module fsm(clk,reset,opcode,op,cond, N, V, Z, nsel,vsel,loada,loadb,asel,bsel,lo
                     mem_cmd = `MREAD;
                 end
 
-                {3'bxxx, `SIF2}:
+                {3'bxxx, `SIF2}: //Supdate
                 begin
                     present_state = `Supdate;
                     load_pc = 1'b1;
@@ -495,7 +495,8 @@ module fsm(clk,reset,opcode,op,cond, N, V, Z, nsel,vsel,loada,loadb,asel,bsel,lo
                             casex (present_state)
                                 `Supdate: present_state = `DECODE;
                                 `DECODE: present_state = `Sa;
-                                `Sa: present_state = `SIF1;
+                                `Sa: present_state = `Sb;
+                                `Sb: present_state = `SIF1;
                                 default: present_state = `Su;
                             endcase
 
@@ -508,11 +509,15 @@ module fsm(clk,reset,opcode,op,cond, N, V, Z, nsel,vsel,loada,loadb,asel,bsel,lo
                                 begin
                                     reset_pc = 4'b0100;
                                 end
+                                `Sb:
+                                begin
+                                    load_pc = 1'b1;
+                                end
                                 `SIF1:
                                 begin
                                     addr_sel = 1'b1;
                                     mem_cmd = `MREAD;
-                                    //reset_pc = 4'b0001;
+                                    reset_pc = 4'b0001;
                                     load_addr = 1'b0;
                                     load_pc = 1'b0;
                                     write = 1'b0;
